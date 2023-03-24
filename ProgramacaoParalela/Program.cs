@@ -7,9 +7,21 @@ using System.Threading.Tasks;
 
 namespace ProgramacaoParalela
 {
+    internal class ThreadParametersForTheExampleWithT5
+    {
+        public int StartCounter { get; set; }
+        public string Name { get; set; }
+
+        public ThreadParametersForTheExampleWithT5(int pStartCounter, string pName)
+        {
+            StartCounter = pStartCounter;
+            Name = pName;
+        }
+    }
+
     class Program
     {
-        static Thread t1, t2;
+        static Thread t1, t2, t3, t4, t5, t6, t7;
         static bool letsFinish;
         static int idThread;
         static object objLock; // Associado ao lock() para resolver problema de concorrência.
@@ -68,7 +80,7 @@ namespace ProgramacaoParalela
                     Thread.Sleep(1000);
                     objMutex.ReleaseMutex(); // Destrava o Mutex.
                 }
-                
+
             }
             catch (ThreadAbortException e)
             {
@@ -78,6 +90,53 @@ namespace ProgramacaoParalela
             {
                 Console.WriteLine("Thread ** 2 ** Finalizada");
             }
+        }
+
+        static void ThreadT3RoutineNoParameterExample()
+        {
+            int counter = 10;
+            do
+            {
+                Console.WriteLine(counter);
+                Thread.Sleep(250);
+                counter++;
+            } while (counter < 20);
+        }
+
+        static void ThreadT4RoutineExampleContainingParameter(object startCounter)
+        {
+            int counter = (int)startCounter;
+            do
+            {
+                Console.WriteLine(counter);
+                Thread.Sleep(250);
+                counter++;
+            } while (counter <= 15);
+        }
+
+        static void ThreadT5RoutineExampleContainingMoreParameters(object pInstanceOfTheClassThatContainsTheParameters)
+        {
+            ThreadParametersForTheExampleWithT5 theParameters = (ThreadParametersForTheExampleWithT5)pInstanceOfTheClassThatContainsTheParameters;
+            int counter = theParameters.StartCounter;
+            do
+            {
+                Console.WriteLine(counter);
+                Thread.Sleep(250);
+                counter++;
+            } while (counter <= 30);
+            Console.WriteLine($"\nContagem finalizada partindo do {theParameters.StartCounter}. Obrigado {theParameters.Name}!");
+        }
+
+        static void ThreadT6RoutineExampleContainingMoreParameters(int pStartCounter, string pName)
+        {
+            int counter = pStartCounter;
+            do
+            {
+                Console.WriteLine(counter);
+                Thread.Sleep(250);
+                counter++;
+            } while (counter <= 40);
+            Console.WriteLine($"\nContagem finalizada partindo do {pStartCounter}. Obrigado {pName}!");
         }
 
         static void Main(string[] args)
@@ -98,7 +157,7 @@ namespace ProgramacaoParalela
 
             objMutex = new Mutex(); // Outra forma de evitar erro de concorrência.
 
-            letsFinish = false; // Flag que mantem o laço das Threads
+            letsFinish = false; // Flag que mantem o laço das Threads t1 e t2.
 
             // Associa a Thread ao Método que deverá ser executado nela.
             t1 = new Thread(new ThreadStart(ThreadT1Routine));
@@ -129,7 +188,6 @@ namespace ProgramacaoParalela
             // Vai fazer com que as Threads saiam do laço e parem de ser executadas.
             //letsFinish = true;
 
-
             /*
             - Forma alternativa de encerrar execução das Threads,
             onde elas são encerradas e não executarão mais nada.
@@ -147,8 +205,68 @@ namespace ProgramacaoParalela
             t2.Abort();
 
             Thread.Sleep(1000);
-            Console.WriteLine("Pressione qualquer tecla para finalizar");
+            Console.WriteLine("Pressione qualquer tecla para mais exemplos com Threads\n");
             Console.ReadKey();
+
+            // Mais exemplos:
+
+            Console.Clear();
+            Thread t3 = new Thread(new ThreadStart(ThreadT3RoutineNoParameterExample));
+            Console.WriteLine("Exemplo de Thread sem parâmetro:\n");
+            t3.Start();
+            Console.ReadKey();
+
+            Console.Clear();
+            // No exemplo abaixo, o parâmetro do método que está sendo associado
+            // à Thread, deve ser do tipo object.
+            Thread t4 = new Thread(new ParameterizedThreadStart(ThreadT4RoutineExampleContainingParameter));
+            Console.WriteLine("Exemplo de Thread com parâmetro:\n");
+            t4.Start(5);
+            Console.ReadKey();
+
+            Console.Clear();
+            // Abaixo, o método que está sendo associado à Thread t5 tem
+            // mais de um parâmetro. Há pelo menos duas formas de lidarmos com
+            // isso, e a primeira está aqui neste exemplo. Foi criada uma classe
+            // chamada ThreadParametersForTheExampleWithT5, cujas propriedades
+            // representam os parâmetros da Thread, e a instância dessa classe
+            // é passada como parâmetro.
+            ThreadParametersForTheExampleWithT5 ThreadParameters = new ThreadParametersForTheExampleWithT5(20, "Rafael");
+            Thread t5 = new Thread(new ParameterizedThreadStart(ThreadT5RoutineExampleContainingMoreParameters));
+            Console.WriteLine("Exemplo de Thread com mais de um parâmetro, onde as propriedades de uma classe são usadas como parâmetro:\n");
+            t5.Start(ThreadParameters);
+            Console.ReadKey();
+
+            Console.Clear();
+            // Novamente, o método que está sendo associado à Thread, agora t6,
+            // tem mais de um parâmetro. Neste exemplo, vemos outra formas de lidarmos com
+            // isso, que desta vez é mais direta, sem a necessidade de usar uma classe.
+            // Foi criada uma classe.
+            Thread t6 = new Thread(()=> ThreadT6RoutineExampleContainingMoreParameters(30, "Carla"));
+            Console.WriteLine("Exemplo de Thread com mais de um parâmetro, onde os mesmos estão sendo passados de forma mais direta:\n");
+            t6.Start();
+            Console.ReadKey();
+
+            Console.Clear();
+            // O exemplo abaixo é muito mais direto. O corpo do método que será
+            // executado na Thread, está contido na própria instanciação da mesma.
+            int startCounter = 50;
+            string name = "Luciane";
+            Console.WriteLine("Exemplo mais direto, onde o corpo do método é declarado na instanciação da Thread t7:\n");
+            Thread t7 = new Thread(() =>
+            {
+                int counter = startCounter;
+                do
+                {
+                    Console.WriteLine(counter);
+                    Thread.Sleep(250);
+                    counter++;
+                } while (counter <= 60);
+                Console.WriteLine($"\nContagem da Thread t7 finalizada, partindo do {startCounter}. Obrigado {name}!");
+            });
+            t7.Start();
+            Console.ReadKey();
+            Console.Clear();
         }
     }
 }
